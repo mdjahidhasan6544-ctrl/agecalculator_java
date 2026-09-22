@@ -1,0 +1,13 @@
+# Gitleaks Configuration for DevSecOps scanning
+title = "Age Calculator Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for build artifacts and documentation"
+paths = [
+  '''^\.git''',
+  '''^target/''',
+  '''^pom\.xml$'''
+]

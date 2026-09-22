@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChronoAge | Precision Age & Life Analytics</title>
+  <meta name="description" content="A modern, high-precision Single Page Application for age calculation, birthday milestones, and life metrics.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 10% 20%, #0d1117 0%, #0f172a 50%, #030712 100%);
+      --card-bg: rgba(30, 41, 59, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(99, 102, 241, 0.4);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-primary: #6366f1;
+      --accent-secondary: #a855f7;
+      --accent-tertiary: #06b6d4;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      --hero-badge-bg: rgba(99, 102, 241, 0.15);
+      --input-bg: rgba(15, 23, 42, 0.7);
+      --shadow-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 8px;
+    }
+
+    [data-theme="light"] {
+      --bg-gradient: radial-gradient(circle at 10% 20%, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%);
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --card-border: rgba(203, 213, 225, 0.6);
+      --card-hover-border: rgba(99, 102, 241, 0.6);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --hero-badge-bg: rgba(99, 102, 241, 0.1);
+      --input-bg: rgba(248, 250, 252, 0.9);
+      --shadow-glow: 0 10px 30px -5px rgba(100, 116, 139, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.35;
+      animation: floatOrb 18s ease-in-out infinite alternate;
+    }
+    .orb-1 {
+      width: 420px;
+      height: 420px;
+      background: #6366f1;
+      top: -50px;
+      left: -100px;
+    }
+    .orb-2 {
+      width: 360px;
+      height: 360px;
+      background: #ec4899;
+      bottom: -50px;
+      right: -80px;
+      animation-delay: -9s;
+    }
+    .orb-3 {
+      width: 300px;
+      height: 300px;
+      background: #06b6d4;
+      top: 45%;
+      right: 15%;
+      animation-duration: 22s;
+    }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(60px, 40px) scale(1.12); }
+    }
+
+    /* Container */
+    .app-container {
+      width: 100%;
+      max-width: 980px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    /* Header Nav */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1.25rem;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--accent-gradient);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+      color: #fff;
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .theme-toggle-btn {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-primary);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+    .theme-toggle-btn:hover {
+      border-color: var(--card-hover-border);
+      transform: scale(1.05);
+    }
+
+    /* Glass Card Standard */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-glow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-card:hover {
+      border-color: var(--card-hover-border);
+    }
+
+    /* Input Section */
+    .calculator-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      background: var(--input-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      font-size: 1rem;
+      font-weight: 500;
+      outline: none;
+    }
+
+    input[type="date"]:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-calculate {
+      grid-column: 1 / -1;
+      padding: 0.95rem;
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4);
+      transition: all 0.2s ease-in-out;
+    }
+
+    .btn-calculate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(168, 85, 247, 0.5);
+    }
+
+    .btn-calculate:active {
+      transform: translateY(0);
+    }
+
+    .quick-preset-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+      flex-wrap: wrap;
+    }
+
+    .preset-chip {
+      background: var(--hero-badge-bg);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: var(--accent-primary);
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .preset-chip:hover {
+      background: var(--accent-primary);
+      color: #fff;
+    }
+
+    /* Hero Age Display Cards */
+    .hero-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 680px) {
+      .hero-metrics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .metric-card {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-gradient);
+    }
+
+    .metric-number {
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1;
+      font-family: var(--font-mono);
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.35rem;
+    }
+
+    .metric-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Live Ticker Bar */
+    .live-ticker {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 0.85rem 1.25rem;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px dashed rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-md);
+      margin-top: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+    }
+
+    .live-dot {
+      width: 9px;
+      height: 9px;
+      background: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.35); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    /* Breakdown & Milestones Grid */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .info-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .info-card-header svg {
+      color: var(--accent-primary);
+    }
+
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .stats-table tr {
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .stats-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .stats-table td {
+      padding: 0.75rem 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    .stats-table td.label {
+      color: var(--text-secondary);
+    }
+
+    .stats-table td.value {
+      text-align: right;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+    }
+
+    /* Next Birthday Progress */
+    .birthday-box {
+      text-align: center;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(236, 72, 153, 0.12));
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      border-radius: var(--radius-md);
+      margin-top: 0.5rem;
+    }
+
+    .birthday-days {
+      font-size: 2.2rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #ec4899;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--input-bg);
+      border-radius: 999px;
+      margin-top: 0.75rem;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      width: 0%;
+      border-radius: 999px;
+      transition: width 1s ease-in-out;
+    }
+
+    /* Error Alert */
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 1rem;
+    }
+
+    .tag-cloud {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .badge-devops {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Light Orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">ChronoAge</h1>
+          <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;">Java 21 • Spring Boot • DevSecOps</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle theme">
+          <span id="themeIcon">☀️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Error Alert Banner -->
+    <div id="errorBanner" class="alert-error" role="alert">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span id="errorMessage">Invalid date range.</span>
+    </div>
+
+    <!-- Inputs Card -->
+    <section class="glass-card">
+      <form id="ageForm" class="calculator-form" onsubmit="event.preventDefault(); calculate();">
+        <div class="form-group">
+          <label for="birthDate">Date of Birth</label>
+          <div class="input-wrapper">
+            <input type="date" id="birthDate" required>
+          </div>
+          <div class="quick-preset-bar">
+            <span class="preset-chip" onclick="setPresetBirth('2000-01-01')">Y2K (2000)</span>
+            <span class="preset-chip" onclick="setPresetBirth('1995-05-15')">1995</span>
+            <span class="preset-chip" onclick="setPresetBirth('1990-10-24')">1990</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="targetDate">Calculate Age At Date</label>
+          <div class="input-wrapper">
+            <input type="date" id="targetDate">
+          </div>
+          <div class="quick-preset-bar">
+            <span class="preset-chip" onclick="setTargetToday()">Today</span>
+            <span class="preset-chip" onclick="setTargetEndOfYear()">End of Year</span>
+          </div>
+        </div>
+
+        <button type="submit" id="btnCalculate" class="btn-calculate">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+          Calculate Precision Age
+        </button>
+      </form>
+    </section>
+
+    <!-- Results Hero Section -->
+    <section id="resultsSection" class="glass-card" style="display: none;">
+      
+      <!-- 3 Primary Counters -->
+      <div class="hero-metrics-grid">
+        <div class="metric-card">
+          <div id="yearsCount" class="metric-number">0</div>
+          <div class="metric-label">Years</div>
+        </div>
+        <div class="metric-card">
+          <div id="monthsCount" class="metric-number">0</div>
+          <div class="metric-label">Months</div>
+        </div>
+        <div class="metric-card">
+          <div id="daysCount" class="metric-number">0</div>
+          <div class="metric-label">Days</div>
+        </div>
+      </div>
+
+      <!-- Live Seconds & Minutes Ticker -->
+      <div class="live-ticker">
+        <div><span class="live-dot"></span> Live Precision Ticker</div>
+        <div><strong>+<span id="tickerHours">0</span></strong> hours</div>
+        <div><strong>+<span id="tickerMinutes">0</span></strong> mins</div>
+        <div><strong>+<span id="tickerSeconds">0</span></strong> secs</div>
+      </div>
+
+      <!-- Detailed Analytics Subgrids -->
+      <div class="analytics-grid" style="margin-top: 1.5rem;">
+        
+        <!-- Next Birthday Card -->
+        <div class="metric-card" style="text-align: left; padding: 1.25rem;">
+          <div class="info-card-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Next Birthday Milestone
+          </div>
+          <div class="birthday-box">
+            <div id="nextBirthdayDays" class="birthday-days">0</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Days Remaining</div>
+          </div>
+          <div style="margin-top: 0.85rem; font-size: 0.85rem; color: var(--text-secondary);">
+            Year Completion Progress:
+          </div>
+          <div class="progress-bar-bg">
+            <div id="birthdayProgress" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Astrological & Astrological Profile -->
+        <div class="metric-card" style="text-align: left; padding: 1.25rem;">
+          <div class="info-card-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            Birth Profile
+          </div>
+          <table class="stats-table">
+            <tr>
+              <td class="label">Born On</td>
+              <td id="valDayOfWeek" class="value">-</td>
+            </tr>
+            <tr>
+              <td class="label">Zodiac Sign</td>
+              <td id="valZodiac" class="value">-</td>
+            </tr>
+            <tr>
+              <td class="label">Chinese Zodiac</td>
+              <td id="valChineseZodiac" class="value">-</td>
+            </tr>
+            <tr>
+              <td class="label">Total Weeks Lived</td>
+              <td id="valTotalWeeks" class="value">0</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Cumulative Life Metrics -->
+        <div class="metric-card" style="text-align: left; padding: 1.25rem;">
+          <div class="info-card-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Total Elapsed Units
+          </div>
+          <table class="stats-table">
+            <tr>
+              <td class="label">Total Days</td>
+              <td id="valTotalDays" class="value">0</td>
+            </tr>
+            <tr>
+              <td class="label">Total Hours</td>
+              <td id="valTotalHours" class="value">0</td>
+            </tr>
+            <tr>
+              <td class="label">Total Minutes</td>
+              <td id="valTotalMinutes" class="value">0</td>
+            </tr>
+            <tr>
+              <td class="label">Est. Heartbeats (~80bpm)</td>
+              <td id="valHeartbeats" class="value">0</td>
+            </tr>
+          </table>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Footer / Pipeline Info -->
+    <footer>
+      <p>ChronoAge Single Page Application &bull; Built with Spring Boot 3 &amp; Java 21</p>
+      <div class="tag-cloud">
+        <span class="badge-devops">Huawei Cloud CodeArts</span>
+        <span class="badge-devops">SWR Registry</span>
+        <span class="badge-devops">Multi-stage Docker</span>
+        <span class="badge-devops">Gitleaks &amp; SAST</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Theme Management
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    let currentTheme = localStorage.getItem('chronoage-theme') || 'dark';
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+      localStorage.setItem('chronoage-theme', theme);
+    }
+    applyTheme(currentTheme);
+
+    themeToggle.addEventListener('click', () => {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(currentTheme);
+    });
+
+    // Preset helper functions
+    const birthDateInput = document.getElementById('birthDate');
+    const targetDateInput = document.getElementById('targetDate');
+
+    function setPresetBirth(dateStr) {
+      birthDateInput.value = dateStr;
+      calculate();
+    }
+
+    function setTargetToday() {
+      const today = new Date().toISOString().split('T')[0];
+      targetDateInput.value = today;
+      if (birthDateInput.value) calculate();
+    }
+
+    function setTargetEndOfYear() {
+      const year = new Date().getFullYear();
+      targetDateInput.value = `${year}-12-31`;
+      if (birthDateInput.value) calculate();
+    }
+
+    // Default initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      setTargetToday();
+      birthDateInput.value = '2000-01-01';
+      calculate();
+    });
+
+    let liveInterval = null;
+
+    // Calculation Engine
+    function calculate() {
+      const birthVal = birthDateInput.value;
+      const targetVal = targetDateInput.value || new Date().toISOString().split('T')[0];
+      const errorBanner = document.getElementById('errorBanner');
+      const errorMessage = document.getElementById('errorMessage');
+      const resultsSection = document.getElementById('resultsSection');
+
+      if (!birthVal) {
+        errorBanner.style.display = 'flex';
+        errorMessage.textContent = 'Please enter a valid birth date.';
+        resultsSection.style.display = 'none';
+        return;
+      }
+
+      const birth = new Date(birthVal + 'T00:00:00');
+      const target = new Date(targetVal + 'T23:59:59');
+
+      if (birth > target) {
+        errorBanner.style.display = 'flex';
+        errorMessage.textContent = 'Birth date cannot be after target calculation date.';
+        resultsSection.style.display = 'none';
+        return;
+      }
+
+      errorBanner.style.display = 'none';
+      resultsSection.style.display = 'block';
+
+      // Year, Month, Day calculation
+      let years = target.getFullYear() - birth.getFullYear();
+      let months = target.getMonth() - birth.getMonth();
+      let days = target.getDate() - birth.getDate();
+
+      if (days < 0) {
+        months--;
+        const prevMonth = new Date(target.getFullYear(), target.getMonth(), 0);
+        days += prevMonth.getDate();
+      }
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      animateValue('yearsCount', parseInt(document.getElementById('yearsCount').textContent) || 0, years, 600);
+      animateValue('monthsCount', parseInt(document.getElementById('monthsCount').textContent) || 0, months, 600);
+      animateValue('daysCount', parseInt(document.getElementById('daysCount').textContent) || 0, days, 600);
+
+      // Total Metrics
+      const diffMs = target - birth;
+      const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const totalWeeks = Math.floor(totalDays / 7);
+      const totalHours = totalDays * 24;
+      const totalMinutes = totalHours * 60;
+      const estHeartbeats = Math.floor(totalMinutes * 80);
+
+      document.getElementById('valTotalDays').textContent = totalDays.toLocaleString();
+      document.getElementById('valTotalWeeks').textContent = totalWeeks.toLocaleString();
+      document.getElementById('valTotalHours').textContent = totalHours.toLocaleString();
+      document.getElementById('valTotalMinutes').textContent = totalMinutes.toLocaleString();
+      document.getElementById('valHeartbeats').textContent = estHeartbeats.toLocaleString();
+
+      // Profile details
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      document.getElementById('valDayOfWeek').textContent = dayNames[birth.getDay()];
+      document.getElementById('valZodiac').textContent = getZodiacSign(birth.getMonth() + 1, birth.getDate());
+      document.getElementById('valChineseZodiac').textContent = getChineseZodiac(birth.getFullYear());
+
+      // Next birthday calculation
+      const today = new Date();
+      let nextBday = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+      if (nextBday < today) {
+        nextBday.setFullYear(today.getFullYear() + 1);
+      }
+      const bdayDiffMs = nextBday - today;
+      const daysUntilBday = Math.ceil(bdayDiffMs / (1000 * 60 * 60 * 24));
+      document.getElementById('nextBirthdayDays').textContent = daysUntilBday;
+
+      const progressPercent = Math.min(100, Math.max(0, Math.round(((365 - daysUntilBday) / 365) * 100)));
+      document.getElementById('birthdayProgress').style.width = `${progressPercent}%`;
+
+      // Live Ticker updates
+      if (liveInterval) clearInterval(liveInterval);
+      updateLiveTicker(birth);
+      liveInterval = setInterval(() => updateLiveTicker(birth), 1000);
+    }
+
+    function updateLiveTicker(birthDate) {
+      const now = new Date();
+      const diff = now - birthDate;
+      if (diff > 0) {
+        const totalSecs = Math.floor(diff / 1000);
+        document.getElementById('tickerSeconds').textContent = (totalSecs % 60).toString().padStart(2, '0');
+        document.getElementById('tickerMinutes').textContent = (Math.floor(totalSecs / 60) % 60).toString().padStart(2, '0');
+        document.getElementById('tickerHours').textContent = (Math.floor(totalSecs / 3600) % 24).toString().padStart(2, '0');
+      }
+    }
+
+    function animateValue(id, start, end, duration) {
+      if (start === end) {
+        document.getElementById(id).textContent = end;
+        return;
+      }
+      const obj = document.getElementById(id);
+      const range = end - start;
+      const minTimer = 50;
+      let stepTime = Math.abs(Math.floor(duration / range));
+      stepTime = Math.max(stepTime, minTimer);
+      const startTime = new Date().getTime();
+      const endTime = startTime + duration;
+
+      function run() {
+        const now = new Date().getTime();
+        const remaining = Math.max((endTime - now) / duration, 0);
+        const value = Math.round(end - (remaining * range));
+        obj.textContent = value;
+        if (value != end) {
+          requestAnimationFrame(run);
+        }
+      }
+      requestAnimationFrame(run);
+    }
+
+    function getZodiacSign(month, day) {
+      const zodiacs = [
+        { name: "Capricorn ♑", m: 1, d: 19 },
+        { name: "Aquarius ♒", m: 2, d: 18 },
+        { name: "Pisces ♓", m: 3, d: 20 },
+        { name: "Aries ♈", m: 4, d: 19 },
+        { name: "Taurus ♉", m: 5, d: 20 },
+        { name: "Gemini ♊", m: 6, d: 20 },
+        { name: "Cancer ♋", m: 7, d: 22 },
+        { name: "Leo ♌", m: 8, d: 22 },
+        { name: "Virgo ♍", m: 9, d: 22 },
+        { name: "Libra ♎", m: 10, d: 22 },
+        { name: "Scorpio ♏", m: 11, d: 21 },
+        { name: "Sagittarius ♐", m: 12, d: 21 },
+        { name: "Capricorn ♑", m: 12, d: 31 }
+      ];
+      for (const z of zodiacs) {
+        if (month === z.m && day <= z.d) return z.name;
+      }
+      return "Capricorn ♑";
+    }
+
+    function getChineseZodiac(year) {
+      const animals = ["Rat 🐀", "Ox 🐂", "Tiger 🐅", "Rabbit 🐇", "Dragon 🐉", "Snake 🐍", "Horse 🐎", "Goat 🐐", "Monkey 🐒", "Rooster 🐓", "Dog 🐕", "Pig 🐖"];
+      return animals[(year - 4) % 12];
+    }
+  </script>
+</body>
+</html>
