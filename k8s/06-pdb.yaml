@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: age-calculator-pdb
+  namespace: age-calculator
+  labels:
+    app.kubernetes.io/name: age-calculator
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: age-calculator-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: age-calculator

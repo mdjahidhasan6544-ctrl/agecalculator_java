@@ -1,0 +1,84 @@
+# ==============================================================================
+# Huawei Cloud CodeArts Pipeline Configuration (Pipeline-as-Code)
+# Project: age-calculator
+# Target: Huawei Cloud CCE (Cloud Container Engine) & SWR
+# ==============================================================================
+version: "2.0"
+
+variables:
+  SWR_REGION: "ap-southeast-3"
+  SWR_ORGANIZATION: "devsecops-org"
+  IMAGE_NAME: "age-calculator"
+  CCE_NAMESPACE: "age-calculator"
+  CCE_CLUSTER_NAME: "cce-prod-cluster"
+
+stages:
+  # ============================================================================
+  # STAGE 1: Code Quality & Security Gate
+  # ============================================================================
+  - name: "Code Security & Quality"
+    steps:
+      - name: "Gitleaks Secret Scan"
+        action: shell
+        inputs:
+          commands:
+            - echo "===> Downloading & Running Gitleaks..."
+            - wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
+            - tar -xzf gitleaks_8.18.2_linux_x64.tar.gz
+            - ./gitleaks detect --source=. --config=.gitleaks.toml --verbose --redact
+
+      - name: "CodeArts Check (SAST)"
+        action: codearts_check
+        inputs:
+          ruleset: "Java Standard & OWASP Top 10"
+          threshold:
+            critical: 0
+            major: 0
+
+  # ============================================================================
+  # STAGE 2: Build, Test & Containerize to SWR
+  # ============================================================================
+  - name: "Build & Push Image to SWR"
+    steps:
+      - name: "Maven Build & Unit Test"
+        action: maven
+        inputs:
+          jdk_version: "21"
+          maven_version: "3.9"
+          commands:
+            - mvn clean package -DskipTests=false
+
+      - name: "Build and Push Image to Huawei SWR"
+        action: swr_push
+        inputs:
+          swr_organization: "${SWR_ORGANIZATION}"
+          image_name: "${IMAGE_NAME}"
+          image_tag: "${BUILD_NUMBER}"
+          dockerfile_path: "./Dockerfile"
+          context_path: "."
+          push_latest: true
+
+  # ============================================================================
+  # STAGE 3: Continuous Deployment to Huawei Cloud CCE
+  # ============================================================================
+  - name: "Deploy to Huawei Cloud CCE"
+    steps:
+      - name: "Deploy Manifests to CCE"
+        action: cce_deploy
+        inputs:
+          # Select your CCE Cluster Service Endpoint created in CodeArts Project Settings
+          cluster_name: "${CCE_CLUSTER_NAME}"
+          namespace: "${CCE_NAMESPACE}"
+          manifest_path: "./k8s"
+          image_replace:
+            - target: "swr.ap-southeast-3.myhuaweicloud.com/devsecops-org/age-calculator:latest"
+              replacement: "swr.${SWR_REGION}.myhuaweicloud.com/${SWR_ORGANIZATION}/${IMAGE_NAME}:${BUILD_NUMBER}"
+          timeout: 180
+
+      - name: "Verify Rollout Status"
+        action: shell
+        inputs:
+          commands:
+            - echo "===> Verifying Deployment Rollout..."
+            - chmod +x ./k8s/deploy.sh
+            - ./k8s/deploy.sh

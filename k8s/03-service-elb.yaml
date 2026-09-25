@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: age-calculator-elb-service
+  namespace: age-calculator
+  labels:
+    app.kubernetes.io/name: age-calculator
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: age-calculator-system
+  annotations:
+    # Huawei Cloud ELB Integration annotations
+    # Use 'union' for shared load balancer or 'performance' for dedicated load balancer
+    kubernetes.io/elb.class: union
+    kubernetes.io/elb.autocreate: |
+      {
+        "type": "public",
+        "bandwidth_name": "cce-age-calculator-bandwidth",
+        "bandwidth_chargemode": "traffic",
+        "bandwidth_size": 5,
+        "bandwidth_sharetype": "PER",
+        "eip_type": "5_bgp"
+      }
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: age-calculator
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP

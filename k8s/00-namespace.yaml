@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: age-calculator
+  labels:
+    app.kubernetes.io/name: age-calculator
+    app.kubernetes.io/part-of: age-calculator-system
+    environment: production

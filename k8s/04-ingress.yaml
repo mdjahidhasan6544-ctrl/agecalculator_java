@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: age-calculator-ingress
+  namespace: age-calculator
+  labels:
+    app.kubernetes.io/name: age-calculator
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: age-calculator-system
+  annotations:
+    # Huawei Cloud ELB Ingress Controller annotations
+    kubernetes.io/ingress.class: cce
+    # Replace with existing ELB ID if using a pre-allocated Huawei ELB:
+    # kubernetes.io/elb.id: "<YOUR_ELB_INSTANCE_ID>"
+    kubernetes.io/elb.port: "80"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: age-calculator-service
+                port:
+                  number: 80

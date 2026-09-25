@@ -158,30 +158,86 @@ steps:
 
 ## 5. Setting up the Full CodeArts Pipeline (Visual Orchestration)
 
-To tie **CodeArts Check**, **CodeArts Build**, and notifications together:
+To tie **CodeArts Check**, **CodeArts Build**, and **CodeArts Deploy to CCE** together:
 
 1. In CodeArts, navigate to **CI/CD** &rarr; **CodeArts Pipeline**.
 2. Click **Create Pipeline** &rarr; **Blank Template**.
 3. Define the stages:
    - **Stage 1 (Code Quality & Security):** Add task &rarr; **CodeArts Check**. Set quality gate to block pipeline on Critical issues.
    - **Stage 2 (CI Build & Registry Push):** Add task &rarr; Link the **CodeArts Build Task** created in Step 3.
-   - **Stage 3 (Deploy - Optional):** Add task &rarr; Deploy to **Huawei Cloud CCE (Cloud Container Engine)** or **CCI (Cloud Container Instance)** using the SWR image tag `${BUILD_NUMBER}`.
+   - **Stage 3 (Deploy to CCE):** Add task &rarr; Link the **CodeArts Deploy Task** (described below) targeting your Huawei Cloud CCE cluster using the SWR image tag `${BUILD_NUMBER}`.
 4. Set **Triggers**:
-   - Check **Code Commit Trigger** on branch `main` to achieve true continuous integration.
+   - Check **Code Commit Trigger** on branch `main` to achieve true continuous integration and continuous deployment.
 
 ---
 
-## 6. SWR Verification & Image Pull Verification
+## 6. Configuring Huawei Cloud CCE & CodeArts Deploy
 
-Once the pipeline execution passes successfully:
-1. Go to **SWR Console** &rarr; **My Images** &rarr; Select `devsecops-org/age-calculator`.
-2. Verify the newly pushed tag `${BUILD_NUMBER}` and `latest`.
-3. You can pull and run the verified container on any Docker host or ECS:
+### Step 6.1: Create CCE Service Connection in CodeArts
+1. In your CodeArts project, go to **Settings** &rarr; **General** &rarr; **Service Endpoints** (or **External Connections**).
+2. Click **Create Service Endpoint** &rarr; Select **Kubernetes (CCE)**.
+3. Fill in:
+   - **Endpoint Name:** e.g., `cce-prod-connection`.
+   - **Authentication Mode:** Select **Huawei Cloud Account Token** or **KubeConfig**.
+   - **Cluster:** Select your Huawei Cloud CCE Cluster (e.g. `cce-prod-cluster`).
+4. Click **Authorize and Save**.
+
+### Step 6.2: Create CodeArts Deploy Task
+1. Navigate to **CI/CD** &rarr; **CodeArts Deploy** &rarr; Click **Create Task**.
+2. Select **Kubernetes / CCE Deployment Template** (or Custom Blank).
+3. Add Step: **Deploy Kubernetes Manifests**:
+   - **Service Connection:** Select `cce-prod-connection`.
+   - **Manifest Source:** Workspace repository (`k8s/` directory).
+   - **Namespace:** `age-calculator`.
+   - **Image Replacement:**
+     ```
+     swr.ap-southeast-3.myhuaweicloud.com/devsecops-org/age-calculator:latest -> swr.${SWR_REGION}.myhuaweicloud.com/${SWR_ORG}/age-calculator:${BUILD_NUMBER}
+     ```
+4. Alternatively, use **Execute Shell Task**:
    ```bash
-   # Log in to your regional SWR
-   docker login -u <REGION>@<USER_NAME> -p <LOGIN_KEY> swr.<REGION>.myhuaweicloud.com
-
-   # Run container
-   docker run -d -p 8080:8080 --name age-calc swr.<REGION>.myhuaweicloud.com/<ORG>/age-calculator:latest
+   export SWR_REGION="ap-southeast-3"
+   export SWR_ORG="devsecops-org"
+   export IMAGE_TAG="${BUILD_NUMBER}"
+   chmod +x ./k8s/deploy.sh
+   ./k8s/deploy.sh
    ```
-4. Access the web app in your browser at `http://<HOST_IP>:8080`.
+
+---
+
+## 7. CCE Kubernetes Manifests Overview (`k8s/`)
+
+The repository includes complete production-grade manifests in the `k8s/` folder:
+
+| Manifest | Purpose & Features |
+| :--- | :--- |
+| [00-namespace.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/00-namespace.yaml) | Isolated `age-calculator` namespace with standard labels |
+| [01-configmap.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/01-configmap.yaml) | Container JVM flags (`-XX:+UseContainerSupport`, `MaxRAMPercentage`), profile & port configs |
+| [02-deployment.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/02-deployment.yaml) | 2 replicas, RollingUpdate, Non-root security context (`10001:10001`), Startup/Liveness/Readiness probes, TopologySpread across AZs, SWR `default-secret` |
+| [03-service.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/03-service.yaml) | Internal `ClusterIP` Service exposing port 80 &rarr; 8080 |
+| [03-service-elb.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/03-service-elb.yaml) | Huawei Cloud ELB `LoadBalancer` Service with auto-provisioning annotations (`kubernetes.io/elb.class: union`) |
+| [04-ingress.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/04-ingress.yaml) | Huawei Cloud CCE Ingress resource (`kubernetes.io/ingress.class: cce`) routing HTTP traffic |
+| [05-hpa.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/05-hpa.yaml) | Horizontal Pod Autoscaler (HPA v2) scaling 2 &rarr; 10 pods on CPU (75%) & Memory (80%) |
+| [06-pdb.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/06-pdb.yaml) | PodDisruptionBudget ensuring high availability during node maintenance / draining |
+| [kustomization.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/kustomization.yaml) | Kustomize resource index for seamless image tag injection in CI/CD |
+| [deploy.sh](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/deploy.sh) | Automated bash deployment script for CodeArts Deploy / CLI with rollout verification |
+
+---
+
+## 8. Verification & Accessing Your Service
+
+1. **Check Deployment and Pods:**
+   ```bash
+   kubectl get pods -n age-calculator
+   kubectl get deployment age-calculator-deployment -n age-calculator
+   ```
+2. **Check ELB Public IP:**
+   ```bash
+   kubectl get svc age-calculator-elb-service -n age-calculator
+   ```
+   Look at the `EXTERNAL-IP` column. Once provisioned by Huawei Cloud ELB, access:
+   `http://<EXTERNAL-IP>/`
+3. **Verify Health Endpoint:**
+   ```bash
+   curl http://<EXTERNAL-IP>/api/health
+   # Expected response: {"service":"age-calculator","status":"UP"}
+   ```

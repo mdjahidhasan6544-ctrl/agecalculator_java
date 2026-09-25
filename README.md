@@ -112,6 +112,23 @@ docker exec -it age-calc id
 
 ---
 
-## ☁️ Huawei Cloud CodeArts Pipeline
+## ☁️ Huawei Cloud CodeArts & CCE Deployment
 
-Refer to the full deployment documentation in [huaweicloud-codearts-pipeline.md](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/huaweicloud-codearts-pipeline.md).
+This repository includes production-ready Kubernetes manifests and automation for **Huawei Cloud CCE (Cloud Container Engine)**:
+
+- **Manifests (`k8s/`):**
+  - [k8s/00-namespace.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/00-namespace.yaml) - Isolated namespace
+  - [k8s/01-configmap.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/01-configmap.yaml) - Container runtime configs & JVM tuning
+  - [k8s/02-deployment.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/02-deployment.yaml) - 2-replica Deployment with rolling updates, startup/liveness/readiness probes, non-root security context (`10001:10001`), topology spread
+  - [k8s/03-service.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/03-service.yaml) - Internal ClusterIP service
+  - [k8s/03-service-elb.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/03-service-elb.yaml) - Huawei Cloud ELB LoadBalancer integration
+  - [k8s/04-ingress.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/04-ingress.yaml) - CCE Ingress routing
+  - [k8s/05-hpa.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/05-hpa.yaml) - Horizontal Pod Autoscaler (2 to 10 pods)
+  - [k8s/06-pdb.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/06-pdb.yaml) - High-availability PodDisruptionBudget
+  - [k8s/kustomization.yaml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/kustomization.yaml) - Kustomize resource definition
+  - [k8s/deploy.sh](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/k8s/deploy.sh) - Deployment automation script
+- **Pipeline-as-Code:** [codearts-pipeline.yml](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/codearts-pipeline.yml)
+- **GUI Deployment Guide:** [CCE-DEPLOYMENT-GUIDE.md](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/CCE-DEPLOYMENT-GUIDE.md) - Complete step-by-step console guide for CodeArts & Huawei Cloud Stack (HCS).
+- **CI/CD Pipeline Details:** [huaweicloud-codearts-pipeline.md](file:///c:/Users/SystemBus/Desktop/agecalculator%20java/huaweicloud-codearts-pipeline.md) - CodeArts Build, Check, and SWR integration.
+
+
